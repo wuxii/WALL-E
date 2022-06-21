@@ -1,23 +1,34 @@
 package com.harmony.bot.lark
 
 import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.harmony.bot.lark.api.Param
-import com.harmony.bot.lark.api.PrimitiveType
+import com.harmony.bot.lark.api.SimpleType
+import com.harmony.bot.lark.api.Type
+import com.harmony.bot.support.get
 
 class ApiModelGenerator {
 
-    fun parseResponseData(o: JsonObject): List<Param> {
-        return listOf()
+    fun parseApiMetaData(o: JsonElement) {
+        parseRequestBody(o["data"]["request"]["body"].asJsonObject)
     }
 
-    private fun parseParams(params: JsonArray): List<Param> {
-        return listOf()
+    private fun parseRequestBody(o: JsonObject): Type {
+        if (!o.has("properties") || o["properties"].asJsonArray.isEmpty) {
+            return SimpleType.OBJECT
+        }
+        val type = o["properties"].asJsonArray.map { parseParam(it) }
+        return SimpleType.OBJECT
     }
 
-    private fun parseParam(o: JsonObject): Param {
-        val type = PrimitiveType.typeOf(o["type"].asString)
-        if (type is PrimitiveType) {
+    fun parseResponseData(o: JsonElement): Type {
+        return null!!
+    }
+
+    private fun parseParam(o: JsonElement): Param {
+        val type = SimpleType.typeOf(o["type"].asString)
+        if (type != null && type.primitive) {
             return Param(
                 name = o["name"].asString,
                 example = o["example"].asString,
@@ -25,11 +36,16 @@ class ApiModelGenerator {
                 type = type
             )
         }
-        return null!!
-    }
 
-    private fun filterFirstNotBlankValue(o: JsonObject, vararg names: String): String? {
-        return names.map { o[it] }.firstOrNull { it != null && it.asString.isNotBlank() }?.asString
+        if (type == SimpleType.LIST) {
+            // todo handle list type
+            o["items"].asJsonObject
+        }
+
+        if (type == SimpleType.OBJECT) {
+            // todo handle object type
+        }
+        return null!!
     }
 
 }
