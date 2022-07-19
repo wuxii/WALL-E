@@ -1,7 +1,5 @@
 package com.harmony.bot.lark.api
 
-import kotlin.reflect.KClass
-
 interface Type {
 
     /**
@@ -11,9 +9,7 @@ interface Type {
 
     fun getPackage(): String
 
-    fun getFullName() = "${getPackage()}.${getTypeName()}"
-
-    fun getFields(): List<Type> = listOf()
+    fun getFullName(): String = "${getPackage()}.${getTypeName()}"
 
 }
 
@@ -21,49 +17,81 @@ data class Param(
     var name: String = "",
     var example: String = "",
     var description: String = "",
-    var type: Type = SimpleType.OBJECT,
+    var type: Type = PrimitiveType.OBJECT,
+    var fields: List<Param> = listOf(),
 ) : Type {
 
-    fun isHasExample() = example.isNotBlank()
+    companion object {
+        fun empty() = Param()
+    }
 
-    fun isList() = (type == SimpleType.LIST)
+    fun isList() = (type == PrimitiveType.LIST)
 
     override fun getTypeName(): String {
         return type.getTypeName()
     }
 
     override fun getPackage(): String {
-        TODO("Not yet implemented")
+        return type.getPackage()
+    }
+
+    fun getImportNames(): Set<String> {
+        return fields.map { it.getFullName() }.filter { !it.startsWith("java.lang") }.sorted().toSet()
+    }
+
+
+    override fun toString(): String {
+        return "${getTypeName()} $name;"
     }
 
 }
 
-data class ListType(val name: String, private val type: Type) : Type {
+data class SimpleType(
+    private val type: PrimitiveType,
+    private val name: String,
+    private val pkg: String,
+) : Type {
+
+    companion object {
+
+        fun listType(name: String, pkg: String) = SimpleType(PrimitiveType.LIST, name, pkg)
+
+        fun objectType(name: String, pkg: String) = SimpleType(PrimitiveType.OBJECT, name, pkg)
+
+    }
 
     override fun getTypeName(): String {
-        return "List<Object>"
+        return if (type == PrimitiveType.LIST) "List<$name>" else name;
     }
 
     override fun getPackage(): String {
-        return type.getPackage();
+        return pkg
+    }
+
+    override fun getFullName(): String {
+        return type.getFullName()
+    }
+
+    override fun toString(): String {
+        return "$pkg.$name"
     }
 
 }
 
-enum class SimpleType(private val type: KClass<*>, val primitive: Boolean) : Type {
+enum class PrimitiveType(private val type: Class<*>, val primitive: Boolean) : Type {
 
-    STRING(String::class, true),
-    OBJECT(Any::class, false),
-    INT(Int::class, true),
-    LIST(List::class, false),
-    BOOLEAN(Boolean::class, true);
+    STRING(String::class.java, true),
+    OBJECT(Any::class.java, false),
+    INT(Integer::class.java, true),
+    LIST(List::class.java, false),
+    BOOLEAN(java.lang.Boolean::class.java, true);
 
-    override fun getTypeName(): String = type.simpleName!!
+    override fun getTypeName(): String = type.simpleName
 
-    override fun getPackage(): String = type.java.packageName
+    override fun getPackage(): String = type.packageName
 
     companion object {
-        fun typeOf(name: String): SimpleType? = values().firstOrNull { it.getTypeName().equals(name, true) }
+        fun of(name: String) = values().firstOrNull { it.name.equals(name, true) } ?: OBJECT
 
     }
 

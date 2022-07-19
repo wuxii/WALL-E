@@ -13,6 +13,10 @@ fun JsonObject.filterFirst(p: (JsonElement) -> Boolean): JsonElement? {
     return this.keySet().filter { p.invoke(this[it]) }.map { this[it] }.firstOrNull()
 }
 
+fun JsonElement.getName(): String {
+    return this.asString
+}
+
 operator fun JsonElement.get(name: String): JsonElement {
     var o: JsonElement? = null
     if (this.isJsonArray) {

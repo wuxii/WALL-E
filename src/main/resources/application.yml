@@ -1,0 +1,16 @@
+
+spring:
+  application:
+    name: WALL-E
+
+lark:
+  app-id: cli_9f87e42e7c72900e
+  app-secret: 0dRpPwifp5iBWiPuLD1uPqpDFkTusD6d
+  encrypt-key: TOKEN
+  verification-token: WJtv0VMAOc3WJ1OWthtrTg0RRAIJp7yh
+  page-size: 20
+
+logging.level:
+  com.larksuite.oapi.core: debug
+
+
